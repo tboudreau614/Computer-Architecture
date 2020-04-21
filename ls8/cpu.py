@@ -1,35 +1,75 @@
 """CPU functionality."""
 
 import sys
+# print(sys.argv)
+
+HLT = 0b00000001
+LDI = 0b10000010
+PRN = 0b01000111
+MUL = 0b10100010
 
 class CPU:
     """Main CPU class."""
 
     def __init__(self):
         """Construct a new CPU."""
-        pass
+        self.ram = [0] * 256
+        self.reg = [0] * 8
+        self.pc = 0
 
     def load(self):
         """Load a program into memory."""
 
-        address = 0
+        # address = 0
 
         # For now, we've just hardcoded a program:
 
-        program = [
-            # From print8.ls8
-            0b10000010, # LDI R0,8
-            0b00000000,
-            0b00001000,
-            0b01000111, # PRN R0
-            0b00000000,
-            0b00000001, # HLT
-        ]
+        # program = [
+        #     # From print8.ls8
+        #     0b10000010, # LDI R0,8
+        #     0b00000000,
+        #     0b00001000,
+        #     0b01000111, # PRN R0
+        #     0b00000000,
+        #     0b00000001, # HLT
+        # ]
 
-        for instruction in program:
-            self.ram[address] = instruction
-            address += 1
+        # for instruction in program:
+        #     self.ram[address] = instruction
+        #     address += 1
 
+        try:
+            address = 0
+            file_name = sys.argv[1]
+
+            with open(file_name) as fn:
+                address = 0
+                file_name=sys.argv[1]
+                for line in fn:
+
+                    split_hash = line.split('#')
+
+                    string_int = split_hash[0].strip()
+
+                    if string_int == "":
+                        continue
+                    bin_int = int(string_int, 2)
+
+                    self.ram[address] = bin_int
+                    address += 1
+        
+        except:
+            print("No file found")
+            print(sys.argv[1])
+            print(sys.argv[0])
+
+    # ram_read() should accept the address to read and return the value stored there.
+    def ram_read(self, MAR):
+        return self.ram[MAR]
+
+    # ram_write() should accept a value to write, and the address to write it to.
+    def ram_write(self, MAR, MDR):
+        self.ram[MAR] = MDR
 
     def alu(self, op, reg_a, reg_b):
         """ALU operations."""
@@ -62,4 +102,31 @@ class CPU:
 
     def run(self):
         """Run the CPU."""
-        pass
+        running = True
+
+        while running:
+            inst = self.ram_read(self.pc)
+            operand_a = self.ram_read(self.pc + 1)
+            operand_b = self.ram_read(self.pc + 2)
+
+            #  Using ram_read(), read the bytes at PC+1 and PC+2 from RAM into variables operand_a and operand_b.
+            if inst == LDI:
+                self.reg[operand_a] = operand_b
+                self.pc += 3
+
+            # Print value of register when the instruction is PRN
+            elif inst == PRN:
+                reg = self.ram[self.pc+1]
+                print(self.reg[reg])
+                self.pc += 2
+
+            # Find value of MUL operation
+            elif inst == MUL:
+                self.reg[operand_a] = self.reg[operand_a] * self.reg[operand_b]
+                # print(self.reg[operand_a]) this makes it print twice
+                self.pc += 3
+
+            # Stop what the program is doing and quit if the instruction is HLT
+            elif inst == HLT:
+                running = False
+                self.pc += 1
