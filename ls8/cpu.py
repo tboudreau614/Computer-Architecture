@@ -7,6 +7,8 @@ HLT = 0b00000001
 LDI = 0b10000010
 PRN = 0b01000111
 MUL = 0b10100010
+PUSH = 0b01000101
+POP = 0b01000110
 
 class CPU:
     """Main CPU class."""
@@ -44,17 +46,13 @@ class CPU:
 
             with open(file_name) as fn:
                 address = 0
-                file_name=sys.argv[1]
+                file_name = sys.argv[1]
                 for line in fn:
-
                     split_hash = line.split('#')
-
                     string_int = split_hash[0].strip()
-
                     if string_int == "":
                         continue
                     bin_int = int(string_int, 2)
-
                     self.ram[address] = bin_int
                     address += 1
         
@@ -104,6 +102,8 @@ class CPU:
         """Run the CPU."""
         running = True
 
+        SP = 7
+
         while running:
             inst = self.ram_read(self.pc)
             operand_a = self.ram_read(self.pc + 1)
@@ -116,15 +116,34 @@ class CPU:
 
             # Print value of register when the instruction is PRN
             elif inst == PRN:
-                reg = self.ram[self.pc+1]
+                reg = self.ram[self.pc + 1]
                 print(self.reg[reg])
                 self.pc += 2
 
-            # Find value of MUL operation
+            # Find product of multiples when using MUL instruction
             elif inst == MUL:
                 self.reg[operand_a] = self.reg[operand_a] * self.reg[operand_b]
-                # print(self.reg[operand_a]) this makes it print twice
                 self.pc += 3
+
+            elif inst == PUSH:
+                self.reg[SP] -= 1
+                register_number = self.ram[self.pc + 1]
+                # print(register_number)
+                value = self.reg[register_number]
+                address = self.reg[SP]
+                self.ram[address] = value
+                # print(value)
+                self.pc += 2
+
+            elif inst == POP:
+                reg2 = self.ram[self.pc + 1]
+                value2 = self.ram[self.reg[SP]]
+                # print(reg2)
+                # print(value2)
+                # self.ram[reg2] = value2 
+                self.reg[reg2] = value2
+                self.reg[SP] += 1
+                self.pc += 2
 
             # Stop what the program is doing and quit if the instruction is HLT
             elif inst == HLT:
